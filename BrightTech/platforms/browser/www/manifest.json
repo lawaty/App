@@ -1,0 +1,11 @@
+{
+  "background_color": "#FFF",
+  "display": "standalone",
+  "name": "Bright Tech",
+  "short_name": "Bright Tech",
+  "version": "com.bright.tech",
+  "description": "Bright Tech.",
+  "author": "Bright Tech Team.",
+  "icons": [],
+  "start_url": "index.html"
+}
