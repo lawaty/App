@@ -30,30 +30,31 @@
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
 
   <script type="text/javascript">
-  	var token = localStorage.getItem("token");
-  	var username = localStorage.getItem("username");
-  	var chip_id = localStorage.getItem("chip_id");
-  	if(token === null || username === null)
-  		window.location.href="index.html";
-  	else if(chip_id === null){
-  		$.ajax({
-  			url:"https://phpstack-482753-1854740.cloudwaysapps.com/api.php",
-  			type:"POST",
-  			data:{
-  				"username":username,
-  				"token":token,
-  				"action":"get_chip_id"
-  			},
-  			success: function(res){
-  				localStorage.setItem("chip_id",res);
-  				chip_id = res;
-  			},
-  			error: function(e){
-  				alert("Connection Error, Refresh to Control Your Home")
-  			}
-  		});
-  	}
-
+    var token = localStorage.getItem("token");
+    var username = localStorage.getItem("username");
+    var user_id = localStorage.getItem("id");
+    if(token === null || username === null || user_id === null)
+      window.location.href="index.html";
+    else{
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type:"POST",
+        data: {
+          "username": username,
+          "token": token,
+          "action": "auth" 
+        },
+        success: function(res){
+          if(res != user_id){
+            // localStorage.removeItem("token");
+            // localStorage.removeItem("username");
+            // localStorage.removeItem("id");
+            alert("Something Went Wrong, Please Login Again"); // Server Donot Know That He Logged Out
+            // location.reload();
+          }
+        }
+      });
+    }
   </script>
 
   <!-- Main CSS File -->
@@ -67,15 +68,13 @@
     <div class="container d-flex align-items-center">
 
       <div class="logo mr-auto">
-        <h1 class="text-light"><a href="index.php"><span class="startup">Bright Tech</span></a></h1>
-        <!-- Uncomment below if you prefer to use an image logo -->
-        <!-- <a href="index.html"><img src="assets/img/logo.png" alt="" class="img-fluid"></a>-->
+         <a href="index.html"><img src="assets/img/logo-transparent.png" alt="" class="img-fluid"></a>
       </div>
 
       <nav class="nav-menu d-none d-lg-block">
         <ul>
-          <li class="active"><a href="">Dashboard</a></li>          
-          <li><a class="MainNavText" onclick="logout()" id="MainNavHelp">Sign Out</a></li>
+<!--           <li class="active"><a href="">Dashboard</a></li>          
+ -->          <li><a class="MainNavText" onclick="logout()" id="MainNavHelp">Sign Out</a></li>
         </ul>
       </nav><!-- .nav-menu -->
 
@@ -83,89 +82,165 @@
   </header><!-- End Header -->
 
   <main id="main">
-  	<section id="My Devices">
-  		<div class="section-title" data-aos="fade-up">
-      	<h2 style="margin-top: 70px;">Dashboard</h2>
-    	</div>
-
-	</section>
-	<div id="mic_section">
-		<p id="action"></p>
-		<button onclick="runSpeechRecognition()">Speak...</button>
-		<p id="output"></p>
-	</div>
+    <section id="my_homes">
+      <div class="section-title" data-aos="fade-up">
+        <h2 style="margin-top: 70px;">Dashboard</h2>
+      </div>
+      <div class="cycle-tab-container">
+        <div id="exTab2" class="container">
+          <div class="panel panel-default"> 
+            <div class="panel-heading">
+              <div class="panel-title">
+                <ul class="nav nav-tabs" id="home_tabs">
+                </ul>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="tab-content" id="tab-content">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main><!-- End #main -->
 
 	<script type="text/javascript">
-    // Load User Dashboard Components
+    var get_string;
+    if( (get_string = window.location.href.indexOf("?")) != -1){
+      var get_headers = window.location.href.split("?")[1].split("&");
+      var get_keys = [];
+      var get_values = [];
+      for (var i = 0; i < get_headers.length; i++) {
+        get_keys.push(get_headers[i].split("=")[0]);
+        get_values.push(get_headers[i].split("=")[1]);
+      }
+    }
+
     $.ajax({
-      url:"https://phpstack-482753-1854740.cloudwaysapps.com/api.php",
+      url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
       type:"POST",
-      data:{
-        "username":username,
-        "token":token,
-        "action":"get_devices"
+      data: {
+        "user_id": user_id,
+        "token": token,
+        "action": "get_homes"
       },
       success: function(res){
-        if(res == 'Not Activated'){
+        if(res=='No Homes'){
           $(".section-title").after(`
             <center>
-              <h3 style="color:red;padding-bottom:20%;" data-aos="fade-up">Contact Us to Activate Your Account</h3>
+              <h3 style="color:red;padding-bottom:20%;" data-aos="fade-up">Contact Us to Add Homes</h3>
             </center>
           `);
+          $("div.cycle-tab-container").hide();
+          $("#user").hide();
         }
         else{
           var obj = JSON.parse(res);
-          $(".section-title").after(`
-            <h5 style="text-align: center;" data-aos="fade-up">Control Your Devices</h5>
-            <div class="container table-responsive py-5"> 
-              <table class="table table-bordered table-hover">
-                <thead class="thead-dark">
-                  <tr>
-                    <th scope="col">Pin Number</th>
-                    <th scope="col">Device Name</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="devices_body">
-                </tbody>
-              </table>
-              <div class="container new_device">
-                <a class="new_device_anchor" onclick="add_new();">Add New Device</a>
-                <div class="form" method="POST" id="add_more">
-                  <input data-aos="fade-left" id="new_device" class="new_device_input" type="text" name="device_name" placeholder="name"/>
-                  <input data-aos="fade-left" class="new_device_input" id="pin" min="1" max="8" type="number" name="pin" placeholder="pin"/>
-                  <center>
-                    <input type="submit" onclick="add_device()" value="Add" class="new_device_submit" data-aos="fade-right"/>
-                  </center>
-                  <p style="color:red" id="new_dev_message"></p>
-                </div>
-              </div>
-            </div>
-          `);
-          if(obj[0] == '')
-            $("tbody#devices_body").html('<tr data-aos="fade-up"><th colspan="3" style="text-align:center;">No Devices to Display</th></tr>');
-          else{
-            obj.forEach(add_row);
-          }
+          obj.forEach(add_home);
         }
       },
       error: function(e){
-        alert("Connection Error")
+        alert("Connection Error");
       }
     });
 
-    function add_row(element){
-      var name = element.split("=")[0];
-      var name_disp = name.replaceAll('_',' ');
-      var pin = parseInt(element.split("=")[1]) + 1;
-      var status = element.split("=")[2];
-      $("tbody#devices_body").append(`
-        <tr data-aos="fade-up">
-          <th scope="row">`+pin+`</th>
-          <td>`+name_disp+`</td>
-          <td>
-            <div><input name="`+pin+`" id="checkbox_`+name+`" type="checkbox" class="checkbox" /><label id="`+status+`" for="checkbox_`+name+`" class="switch"><span class="switch__circle"><span class="switch__circle-inner"></span></span><span class="switch__left">Off</span><span class="switch__right">On</span></label></div>
+    function add_home(home){
+      var home_name = home['name'];
+      var disp = home_name.replaceAll('_',' ');
+      var role = home['role'];
+      var chip_id = home['chip_id'];
+      var home_id = home['_id']
+      $("ul#home_tabs").append(`
+        <li class="cycle-tab-item">
+          <a href="#`+home_name+`" id="`+home_id+`" class="nav-link" data-toggle="tab">`+disp+`</a>
+        </li>
+      `);
+
+      $("#tab-content").append(`
+        <div class="tab-pane" id="`+home_name+`">
+          <h3 class="capit">`+role+`</h3>
+          <div class="container table-responsive py-5"> 
+            <table class="table table-bordered table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th scope="col">Device Name</th>
+                  <th scope="col">Pin</th>
+                  <th scope="col" colspan="3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="`+home_id+`_devices_body" chip_id="`+chip_id+`">
+              </tbody>
+            </table>
+            <div class="container new_device">
+              <a class="new_device_anchor" onclick="add_new();">Add New Device</a>
+              <div class="form" method="POST" id="add_more">
+                <input data-aos="fade-left" id="`+home_name+`_new_device" class="new_device_input" type="text" name="device_name" placeholder="name"/>
+                <input data-aos="fade-left" class="new_device_input pin" id="`+home_name+`_pin" min="1" max="8" type="number" name="pin" placeholder="pin"/>
+                <center>
+                  <input type="submit" onclick='add_device(`+home_id+`,"`+home_name+`")' value="Add" class="new_device_submit" data-aos="fade-right"/>
+                </center>
+                <p style="color:red" id="new_dev_message"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+  
+      get_devices(user_id, token, home_id);
+    }
+
+    function get_devices(user_id, token, home_id){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "home_id": home_id,
+          "action": "get_devices"
+        },
+        success: function(res){
+          if(res == 'No Devices'){
+            $("tbody#"+home_id+"_devices_body").html('<tr data-aos="fade-up"><th colspan="3" style="text-align:center;">No Devices to Display</th></tr>');
+          }
+          else{
+            var obj = JSON.parse(res);
+            for (var i = 0; i < obj.length; i++) {
+              add_row(obj[i], home_id);
+            }
+          }
+        },
+        error: function(e){
+          alert("Connection Error");
+          location.reload();
+        }
+      });
+      if($("a.nav-link.active").length == 0)
+      $("a.nav-link").get(0).click();
+    }
+
+    function add_row(device, home_id){
+      var device_id = device['_id'];
+      var name = device['name'];
+      var disp = name.replaceAll('_',' ');
+      var pin = parseInt(device['pin']) + 1;
+      var status = device['status'];
+
+      // Delete Belongings
+
+      $("tbody#"+home_id+"_devices_body").append(`
+        <tr data-aos="fade-up" id="`+name+`" class="device_row">
+          <th scope="row" class="capit">
+            <span id="`+device_id+`_disp_name">`+disp+`</span>
+            <input type="text" id="`+device_id+`_edit_name" class="edit_field" style="display:none;">
+          </th>
+          <td class="pin">
+            <span id="`+device_id+`_disp_pin">`+pin+`</span>
+            <input type="number" id="`+device_id+`_edit_pin" class="pin edit_field" style="display:none;">
+          </td>
+          <td class="toggle actions">
+            <div class="switch_div"><input name="`+pin+`" id="checkbox_`+name+`" type="checkbox" class="checkbox" /><label id="`+status+`" for="checkbox_`+name+`" class="switch"><span class="switch__circle"><span class="switch__circle-inner"></span></span><span class="switch__left">Off</span><span class="switch__right">On</span></label></div>
           </td>
         </tr>
       `);
@@ -173,23 +248,73 @@
         $('input[name="'+pin+'"]').attr("checked","checked");
       $("input#checkbox_"+name).click(function (){
         var status = $(this).next("label").attr("id");
-        var pin = $(this).attr("name");
-        var val = parseInt(status) ? 0 : 1
+        var val = parseInt(status) ? 0 : 1;
+        var chip_id = $("#"+home_id+"_devices_body").attr("chip_id");
         $(this).next("label").attr("id",val);
-        toggle_status(pin, val, name);
+        toggle_Status(chip_id, val, name);
       });
     }
 
-		function toggle_status(pin, value, name){
-			$.ajax({
-			  type: "POST",
-			  url: "https://phpstack-482753-1854740.cloudwaysapps.com/api.php",
-			  data: {
-			  	"username" : username,
-			  	"chip_id" :chip_id,
-			  	"pin_no" : parseInt(pin) - 1,
-			  	"value" : value
-			  },
+    function check_edit(device_id, home_id, a){
+      var new_name = $("input#"+device_id+"_edit_name").val();
+      var new_pin = $("input#"+device_id+"_edit_pin").val();
+      if(localStorage.getItem("edit") !== null){
+        if(new_name != '' && new_pin > 0 && new_pin < 9){
+          edit(device_id, new_name, new_pin, home_id);
+        }
+        else
+          alert("Invalid Name & Pin");
+
+      }else {
+        $(a).css("background-color", "green");
+        $("#"+device_id+"_disp_name").hide();
+        $("#"+device_id+"_disp_pin").hide();
+        $("#"+device_id+"_edit_name").show();
+        $("#"+device_id+"_edit_pin").show();
+        localStorage.setItem("edit", device_id);
+      }
+    }
+
+    function edit(device_id, new_name, new_pin, home_id){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "device_id": device_id,
+          "new_name": new_name,
+          "new_pin": new_pin,
+          "home_id": home_id,
+          "action": "edit_device"
+        },
+        success: function(res){
+          if(res == 'success'){
+            localStorage.removeItem("edit");
+            location.reload();
+          }
+          else{
+            alert(res);
+          }
+        },
+        error: function(e){
+
+        }
+      });
+    }
+
+    function toggle_Status(chip_id, value, device_name){
+      $.ajax({
+        type: "POST",
+        url: "https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        data: {
+          "username": username,
+          "token": token,
+          "chip_id": chip_id,
+          "device_name": device_name,
+          "value": value,
+          "action": "update"
+        },
         success: function (res){
           if(res != 'Status Updated Successfully'){
             //Silence
@@ -199,66 +324,124 @@
           alert("Connection Error");
           location.reload();
         }
-			});
-		}
+      });
+    }
 
-		function add_device(){
-			$.ajax({
-				url:"https://phpstack-482753-1854740.cloudwaysapps.com/api.php",
-				type:"POST",
-				data:{
-					"username":username,
-					"token":token,
-					"device_name":$("input#new_device").val(),
-					"pin":$("input#pin").val(),
-					"action":'add_device'
-				},
-				success: function(res){
-					if(res == 'success')
-						location.reload();
-					else
-						add_device_message(res);
-				}
-			});
-		}
-
-		function add_device_message(message){
-			$("#new_dev_message").html(message);
-			setTimeout(function () {
-				$("#new_dev_message").html("");					
-			}, 3000);
-		}
-
-		setTimeout(function (){
-			$(window).scrollTop(0);
-		}, 200);
-
-		function add_new() {
-			$("div.form#add_more").toggle();
-		}
-
-		function logout(){
+    function add_device(home_id, home_name){
+      var device_name = $("input#"+home_name+"_new_device").val();
+      var pin = $("input#"+home_name+"_pin").val();
       $.ajax({
-        url:"https://phpstack-482753-1854740.cloudwaysapps.com/logout.php",
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
         type:"POST",
         data:{
-          "username":username,
+          "user_id":user_id,
+          "home_id": home_id,
+          "token":token,
+          "device_name":device_name,
+          "pin":pin,
+          "action":'add_device'
+        },
+        success: function(res){
+          if(res == 'success')
+            window.location.href="dashboard.html?home="+home_id;
+          else
+            add_device_message(res);
+        },
+        error: function(e){
+          alert("Connection Error");
+        }
+      });
+    }
+
+    function delete_device(device_name, device_id, home_id){
+      if(! confirm("Are you sure you want to delete "+device_name))
+        return;
+      $.ajax({
+        url: "https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "home_id": home_id,
+          "device_id": device_id,
+          "action": "delete_device"
+        },
+        success: function(res){
+          if(res != 'success'){
+            alert("Something Went Wrong");
+            location.reload();
+          }
+          $("tr#"+device_name).remove();
+          if(! $("tbody#"+home_id+"_devices_body").find("tr").length)
+            $("tbody#"+home_id+"_devices_body").html('<tr data-aos="fade-up"><th colspan="3" style="text-align:center;">No Devices to Display</th></tr>');
+        },
+        error: function(e){
+          alert("Connection Error, Try Again");
+        }
+      });
+    }
+
+    function add_device_message(message){
+      $("p#new_dev_message").html(message);
+      setTimeout(function () {
+        $("p#new_dev_message").html("");          
+      }, 3000);
+    }
+
+    setTimeout(function (){
+      $(window).scrollTop(0);
+
+      // Display home from GET requiest
+      var index;
+      if(window.location.href.indexOf("?") != -1){
+        if( (index = get_keys.indexOf("home")) != -1 )
+          $("a#"+get_values[index]).click();        
+      }
+
+      // Restrict pin max and min
+      $("input.pin").each(function(){
+        $(this).on('keyup', function(){
+          if($(this).val() > 8 || $(this).val() == '' || $(this).val() == 0)
+            $(this).val('');
+        });
+      });
+
+      // $(document).mouseup(function(e) {
+      //   var container = $("input.edit_field");
+      //   if (!container.is(e.target) && container.has(e.target).length === 0)) {
+      //     var device_id = localStorage.getItem("edit");
+      //     $("#"+device_id+"_disp_name").show();
+      //     $("#"+device_id+"_disp_pin").show();
+      //     $("#"+device_id+"_edit_name").hide();
+      //     $("#"+device_id+"_edit_pin").hide();
+      //     localStorage.removeItem("edit");
+      //     $("a.button-action.touch.edit").css("background-color", "#3498db");
+      //   }
+      // });
+
+    }, 300);
+
+    function add_new() {
+      $("div.form#add_more").toggle();
+    }
+
+    function logout(){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/logout.php",
+        type:"POST",
+        data:{
           "token":token
         },
         success: function(response){
-        	if(response == "success"){
-        		localStorage.removeItem("username");
-        		localStorage.removeItem("token");
-        		localStorage.removeItem("chip_id");
-        		location.reload();
-        	}
-          else{
-            alert(response);
-            localStorage.removeItem("username");
-            localStorage.removeItem("token");
-            localStorage.removeItem("chip_id");
-            location.reload();
+          localStorage.removeItem("username");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user_id");
+          if(response == "success"){
+           //KEEP SILENCE
           }
+          else
+            alert(response);
+          location.reload();
         },
         error: function(e){
           alert("Try again...");
@@ -329,17 +512,20 @@
 
 
   <!-- ======= Footer ======= -->
-  <footer id="footer">
-    <div class="container">
-      <div class="row d-flex align-items-center">
-        <div class="col-lg-6 text-lg-left text-center">
-          <div class="copyright">
-            &copy; Copyright <strong>Bright Tech</strong>. All Rights Reserved
-          </div>
+  <footer>
+    <nav class="bottom-nav">
+      <div class="bottom-nav-item">
+        <div class="bottom-nav-link">
+          <span onclick="location.reload();">Refresh</span>
         </div>
       </div>
-    </div>
-  </footer><!-- End Footer -->
+      <div class="bottom-nav-item">
+        <div class="bottom-nav-link">
+          <span onclick="runSpeechRecognition()">Voice</span>
+        </div>
+      </div>
+    </nav>
+  </footer>
 
   <a href="#" class="back-to-top"><i class="icofont-simple-up"></i></a>
 
