@@ -1,0 +1,4 @@
+#Fri May 14 08:42:22 EET 2021
+base.0=E\:\\Abdelrahman\\Current Work\\BrightTech\\platforms\\android\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\0
+path.0=classes.dex
+renamed.0=classes.dex

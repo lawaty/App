@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>Bright Tech | New Vision</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <!-- Favicons -->
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <!-- Vendor Files -->
+  <script src="assets/vendor/jquery/jquery.min.js"></script>
+  <script src="assets/vendor/bootstrap/js/bootstrap.min.js"></script>
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/icofont/icofont.min.css" rel="stylesheet">
+  <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet">
+  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="assets/vendor/owl.carousel/assets/owl.carousel.min.css" rel="stylesheet">
+  <link href="assets/vendor/venobox/venobox.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+
+  <script type="text/javascript">
+    var token = localStorage.getItem("token");
+    var username = localStorage.getItem("username");
+    var user_id = localStorage.getItem("id");
+    if(token === null || username === null || user_id === null)
+      window.location.href="index.html";
+    else{
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type:"POST",
+        data: {
+          "username": username,
+          "token": token,
+          "action": "auth" 
+        },
+        success: function(res){
+          if(res != user_id){
+            localStorage.removeItem("token");
+            localStorage.removeItem("username");
+            localStorage.removeItem("id");
+            alert("Something Went Wrong, Please Login Again"); // Server Donot Know That He Logged Out
+            location.reload();
+          }
+        }
+      });
+    }
+    localStorage.removeItem("edit");
+  </script>
+
+  <!-- Main CSS File -->
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- ======= Header ======= -->
+  <header id="header" class="fixed-top d-flex align-items-center">
+    <div class="container d-flex align-items-center">
+
+      <div class="logo mr-auto">
+         <a href="index.html"><img src="assets/img/logo-transparent.png" alt="" class="img-fluid"></a>
+      </div>
+
+      <nav class="nav-menu d-none d-lg-block">
+        <ul>
+<!--           <li class="active"><a href="">Dashboard</a></li>          
+ -->          <li><a class="MainNavText" onclick="logout()" id="MainNavHelp">Sign Out</a></li>
+        </ul>
+      </nav><!-- .nav-menu -->
+
+    </div>
+  </header><!-- End Header -->
+
+  <main id="main">
+    <section id="my_homes">
+      <div class="section-title" data-aos="fade-up">
+        <h2 style="margin-top: 70px;">Dashboard</h2>
+      </div>
+      <div class="cycle-tab-container">
+        <div id="exTab2" class="container">
+          <div class="panel panel-default"> 
+            <div class="panel-heading">
+              <div class="panel-title">
+                <ul class="nav nav-tabs" id="home_tabs">
+                </ul>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="tab-content" id="tab-content">
+              </div>
+            </div>
+          </div>
+          <p> Click on any device name or pin to edit</p>
+          <p> Enter empty device name to remove devices</p>
+        </div>
+      </div>
+    </section>
+  </main><!-- End #main -->
+
+	<script type="text/javascript">
+    var get_string;
+    if( (get_string = window.location.href.indexOf("?")) != -1){
+      var get_headers = window.location.href.split("?")[1].split("&");
+      var get_keys = [];
+      var get_values = [];
+      for (var i = 0; i < get_headers.length; i++) {
+        get_keys.push(get_headers[i].split("=")[0]);
+        get_values.push(get_headers[i].split("=")[1]);
+      }
+    }
+
+    $.ajax({
+      url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+      type:"POST",
+      data: {
+        "user_id": user_id,
+        "token": token,
+        "action": "get_homes"
+      },
+      success: function(res){
+        if(res=='No Homes'){
+          $(".section-title").after(`
+            <center>
+              <h3 style="color:red;padding-bottom:20%;" data-aos="fade-up">Contact Us to Add Homes</h3>
+            </center>
+          `);
+          $("div.cycle-tab-container").hide();
+          $("#user").hide();
+        }
+        else{
+          var obj = JSON.parse(res);
+          obj.forEach(add_home);
+        }
+      },
+      error: function(e){
+        alert("Connection Error");
+      }
+    });
+
+    function add_home(home){
+      var home_name = home['name'];
+      var disp = home_name.replaceAll('_',' ');
+      var role = home['role'];
+      var chip_id = home['chip_id'];
+      var home_id = home['_id']
+      $("ul#home_tabs").append(`
+        <li class="cycle-tab-item">
+          <a href="#`+home_name+`" id="`+home_id+`" class="nav-link" data-toggle="tab">`+disp+`</a>
+        </li>
+      `);
+
+      $("#tab-content").append(`
+        <div class="tab-pane" id="`+home_name+`">
+          <h3 class="capit">`+role+`</h3>
+          <div class="container table-responsive py-5"> 
+            <table class="table table-bordered table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th scope="col">Device Name</th>
+                  <th scope="col">Pin</th>
+                  <th scope="col" colspan="3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="`+home_id+`_devices_body" chip_id="`+chip_id+`">
+              </tbody>
+            </table>
+            <div class="container new_device">
+              <a class="new_device_anchor" onclick="add_new();">Add New Device</a>
+              <div class="form" method="POST" id="add_more">
+                <input data-aos="fade-left" id="`+home_name+`_new_device" class="new_device_input" type="text" name="device_name" placeholder="name"/>
+                <input data-aos="fade-left" class="new_device_input pin" id="`+home_name+`_pin" min="1" max="8" type="number" name="pin" placeholder="pin"/>
+                <center>
+                  <input type="submit" onclick='add_device(`+home_id+`,"`+home_name+`")' value="Add" class="new_device_submit" data-aos="fade-right"/>
+                </center>
+                <p style="color:red" id="new_dev_message"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+  
+      get_devices(user_id, token, home_id);
+    }
+
+    function get_devices(user_id, token, home_id){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "home_id": home_id,
+          "action": "get_devices"
+        },
+        success: function(res){
+          if(res == 'No Devices'){
+            $("tbody#"+home_id+"_devices_body").html('<tr data-aos="fade-up"><th colspan="3" style="text-align:center;">No Devices to Display</th></tr>');
+          }
+          else{
+            var obj = JSON.parse(res);
+            for (var i = 0; i < obj.length; i++) {
+              add_row(obj[i], home_id);
+            }
+          }
+        },
+        error: function(e){
+          alert("Connection Error");
+          location.reload();
+        }
+      });
+      if($("a.nav-link.active").length == 0)
+      $("a.nav-link").get(0).click();
+    }
+
+    function add_row(device, home_id){
+      var device_id = device['_id'];
+      var name = device['name'];
+      var disp = name.replaceAll('_',' ');
+      var pin = parseInt(device['pin']) + 1;
+      var status = device['status'];
+
+      // Delete Belongings
+
+      $("tbody#"+home_id+"_devices_body").append(`
+        <tr data-aos="fade-up" id="`+name+`" class="device_row">
+          <th scope="row" class="capit">
+            <span id="`+device_id+`_disp_name" class="editable" onclick='check_edit("`+device_id+`","`+home_id+`", this)'>`+disp+`</span>
+            <input type="text" id="`+device_id+`_edit_name" class="edit_field" style="display:none;">
+          </th>
+          <td class="pin">
+            <span id="`+device_id+`_disp_pin" class="editable" onclick='check_edit("`+device_id+`","`+home_id+`", this)'>`+pin+`</span>
+            <input type="number" id="`+device_id+`_edit_pin" class="pin edit_field" style="display:none;">
+          </td>
+          <td class="toggle actions">
+            <div class="switch_div">
+              <input name="`+pin+`" id="checkbox_`+name+`" type="checkbox" class="checkbox" />
+              <label id="`+status+`" for="checkbox_`+name+`" class="switch">
+                <span class="switch__circle">
+                  <span class="switch__circle-inner"></span>
+                </span>
+                <span class="switch__left">Off</span>
+                <span class="switch__right">On</span>
+              </label>
+            </div>
+            <i onclick='check_edit("`+device_id+`","`+home_id+`", "`+name+`")' class="fa fa-check" aria-hidden="true"></i>
+          </td>
+        </tr>
+      `);
+      if(status == 1)
+        $('input[name="'+pin+'"]').attr("checked","checked");
+      $("input#checkbox_"+name).click(function (){
+        var status = $(this).next("label").attr("id");
+        var val = parseInt(status) ? 0 : 1;
+        var chip_id = $("#"+home_id+"_devices_body").attr("chip_id");
+        $(this).next("label").attr("id",val);
+        toggle_Status(chip_id, val, name);
+      });
+    }
+
+    function check_edit(device_id, home_id, element){
+      var new_name = $("input#"+device_id+"_edit_name").val();
+      var new_pin = $("input#"+device_id+"_edit_pin").val();
+      if(localStorage.getItem("edit") == device_id){
+        if(new_name == ''){
+          delete_device(element, device_id, home_id);
+        }
+        else if(new_pin > 0 && new_pin < 9)
+          edit(device_id, new_name, new_pin, home_id);
+        
+        else
+          alert("Invalid Pin No.");
+
+      }else {
+        if(localStorage.getItem("edit") !== null)
+          end_edit();
+
+        start_edit(device_id, element)
+      }
+    }
+
+    function start_edit(device_id, element){
+      $(document).ready(function(){
+        $("#"+device_id+"_disp_name").hide();
+        $("#"+device_id+"_disp_pin").hide();
+        $("#"+device_id+"_edit_name").show();
+        $("#"+device_id+"_edit_pin").show();
+        $(element).parent().nextAll("td.actions").find("i").show();  
+        $(element).parent().nextAll("td.actions").find("div").hide();  
+      });      
+      localStorage.setItem("edit", device_id);
+    }
+
+    function edit(device_id, new_name, new_pin, home_id){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "device_id": device_id,
+          "new_name": new_name,
+          "new_pin": new_pin,
+          "home_id": home_id,
+          "action": "edit_device"
+        },
+        success: function(res){
+          if(res == 'success'){
+            localStorage.removeItem("edit");
+            location.reload();
+          }
+          else{
+            alert(res);
+          }
+        },
+        error: function(e){
+          alert("Connection Error");
+        }
+      });
+    }
+
+    function toggle_Status(chip_id, value, device_name){
+      $.ajax({
+        type: "POST",
+        url: "https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        data: {
+          "username": username,
+          "token": token,
+          "chip_id": chip_id,
+          "device_name": device_name,
+          "value": value,
+          "action": "update"
+        },
+        success: function (res){
+          if(res != 'Status Updated Successfully'){
+            //Silence
+          }
+        },
+        error: function(e){
+          alert("Connection Error");
+          location.reload();
+        }
+      });
+    }
+
+    function add_device(home_id, home_name){
+      var device_name = $("input#"+home_name+"_new_device").val();
+      var pin = $("input#"+home_name+"_pin").val();
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type:"POST",
+        data:{
+          "user_id":user_id,
+          "home_id": home_id,
+          "token":token,
+          "device_name":device_name,
+          "pin":pin,
+          "action":'add_device'
+        },
+        success: function(res){
+          if(res == 'success')
+            window.location.href="dashboard.html?home="+home_id;
+          else
+            add_device_message(res);
+        },
+        error: function(e){
+          alert("Connection Error");
+        }
+      });
+    }
+
+    function delete_device(device_name, device_id, home_id){
+      if(! confirm("Are you sure you want to delete "+device_name))
+        return;
+      $.ajax({
+        url: "https://phpstack-482753-1854740.cloudwaysapps.com/BT/api.php",
+        type: "POST",
+        data: {
+          "user_id": user_id,
+          "token": token,
+          "home_id": home_id,
+          "device_id": device_id,
+          "action": "delete_device"
+        },
+        success: function(res){
+          if(res != 'success'){
+            alert("Something Went Wrong");
+            location.reload();
+          }
+          $("tr#"+device_name).remove();
+          if(! $("tbody#"+home_id+"_devices_body").find("tr").length)
+            $("tbody#"+home_id+"_devices_body").html('<tr data-aos="fade-up"><th colspan="3" style="text-align:center;">No Devices to Display</th></tr>');
+        },
+        error: function(e){
+          alert("Connection Error, Try Again");
+        }
+      });
+    }
+
+    function add_device_message(message){
+      $("p#new_dev_message").html(message);
+      setTimeout(function () {
+        $("p#new_dev_message").html("");          
+      }, 3000);
+    }
+
+    setTimeout(function (){
+      $(window).scrollTop(0);
+
+      // Display home from GET requiest
+      var index;
+      if(window.location.href.indexOf("?") != -1){
+        if( (index = get_keys.indexOf("home")) != -1 )
+          $("a#"+get_values[index]).click();        
+      }
+
+      // Restrict pin max and min
+      $("input.pin").each(function(){
+        $(this).on('keyup', function(){
+          if($(this).val() > 8 || $(this).val() == '' || $(this).val() == 0)
+            $(this).val('');
+        });
+      });
+
+      $(document).mouseup(function(e) {
+        var container = $("input.edit_field");
+        var container2 = $("span.editable");
+        var container3 = $("i.fa-check");
+        if (!container.is(e.target) && container.has(e.target).length === 0 && !container2.is(e.target) && container2.has(e.target).length === 0 && !container3.is(e.target) && container3.has(e.target).length === 0) {
+          end_edit();
+        }
+      });
+
+    }, 300);
+
+    function end_edit(){
+      $(".edit_field").hide();
+      $(".editable").show();
+      $(".fa-check").hide();
+      $(".switch_div").show();
+      localStorage.removeItem("edit");
+    }
+
+    function add_new() {
+      $("div.form#add_more").toggle();
+    }
+
+    function logout(){
+      $.ajax({
+        url:"https://phpstack-482753-1854740.cloudwaysapps.com/BT/logout.php",
+        type:"POST",
+        data:{
+          "token":token
+        },
+        success: function(response){
+          localStorage.removeItem("username");
+          localStorage.removeItem("token");
+          localStorage.removeItem("user_id");
+          if(response == "success"){
+           //KEEP SILENCE
+          }
+          else
+            alert(response);
+          location.reload();
+        },
+        error: function(e){
+          alert("Try again...");
+        }
+      });
+    }
+
+    function runSpeechRecognition() {
+        // get action element reference
+        var action = document.getElementById("action");
+        // new speech recognition object
+        var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+        var recognition = new SpeechRecognition();
+    		
+        // This runs when the speech recognition service starts
+        recognition.onstart = function() {
+            action.innerHTML = "<small>listening, please speak...</small>";
+        };
+
+        recognition.onspeechend = function() {
+            action.innerHTML = "<small>stopped listening, hope you are done...</small>";
+            recognition.stop();
+            setTimeout(function (){
+            	action.innerHTML = "";
+            }, 1000);
+        }
+      	
+        recognition.onerror = function() {
+        	alert("Allow Microphone Permission To Use This Feature");
+        	action.innerHTML = "";
+        }
+        // This runs when the speech recognition service returns result
+        recognition.onresult = function(event) {
+            var transcript = event.results[0][0].transcript;
+            var confidence = event.results[0][0].confidence;
+            if(confidence < 0.7){
+            	$("#output").html("Not Certain About What You Said");
+            	return;
+            }
+          	var temp = transcript.split(" ");
+          	var len = temp.length;
+          	var command = temp[len-1].toLowerCase();
+          	if(command != 'on' && command != 'of' && command != 'off'){
+          		$("#output").html("Command Not Recognized");
+          		return;
+          	}
+          	else{
+          		if(command == 'of')
+          			command = 'off';
+          	}
+          	var name = temp.slice(0, len-1).join("_").toLowerCase();
+          	var display = temp.slice(0, len-1).join(" ").toLowerCase();
+          	if($("input#checkbox_"+name).length == 0){
+          		$("#output").html("Device \""+display+"\" Does Not Exist");
+          		return;
+          	}
+          	$("#output").html("");
+          	var current_status = $("#checkbox_"+name+":checked").length > 0 ? 'on' : 'off';
+          	if(command != current_status){
+          		$("input#checkbox_"+name).click();
+          	}
+        };
+
+         // start recognition
+         recognition.start();
+    }
+
+	</script>		
+
+
+  <!-- ======= Footer ======= -->
+  <footer>
+    <nav class="bottom-nav">
+      <div class="bottom-nav-item">
+        <div class="bottom-nav-link">
+          <span onclick="location.reload();">Refresh</span>
+        </div>
+      </div>
+      <div class="bottom-nav-item">
+        <div class="bottom-nav-link">
+          <span onclick="runSpeechRecognition()">Voice</span>
+        </div>
+      </div>
+    </nav>
+  </footer>
+
+  <a href="#" class="back-to-top"><i class="icofont-simple-up"></i></a>
+
+  <!-- Vendor JS Files -->
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/jquery.easing/jquery.easing.min.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script src="assets/vendor/waypoints/jquery.waypoints.min.js"></script>
+  <script src="assets/vendor/counterup/counterup.min.js"></script>
+  <script src="assets/vendor/owl.carousel/owl.carousel.min.js"></script>
+  <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="assets/vendor/venobox/venobox.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+
+  <!-- Main JS File -->
+  <script src="assets/js/main.js"></script>
+
+</body>
+
+</html>
